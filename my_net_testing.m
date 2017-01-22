@@ -29,7 +29,7 @@ learn_classes = double(learn_classes==class_no)*2-1; %1 gdy nale¿y do klasy clas
 test_classes = double(test_classes==class_no)*2-1; %1 gdy nale¿y do klasy class_no, -1 w p.p.
 
 %% 2 - Uczenie sieci pierwszej koncepcji
-close all
+%close all
 
 efforts = 10; % Liczba testowanych wag dla danej architektury
 neurons = 3;  %Liczba neuronów w warstwie ukrytej
@@ -117,10 +117,14 @@ summary = zeros(5,efforts);             %Dla klasyfikatora binarnego
 % summary
 
 %% 3b - Testy i wybór pojedynczego klasyfikatora dla trzech klas
-close all;
+%close all;
+%clc;
 
-efforts = 10; % Liczba testowanych wag dla danej architektury
-neurons = 3;  %Liczba neuronów w warstwie ukrytej
+fprintf('Start symulacji\n');
+
+efforts = 1;  %Liczba testowanych wag dla danej architektury
+neurons = 3;    %Liczba neuronów w warstwie ukrytej
+treshold = 0;  %Prog wykorzystywany do oceny jakoœci klasyfikacji
 
 test_labels;
 learn_labels;
@@ -131,30 +135,24 @@ summary_3 = zeros(5,efforts*3);         %Dla klasyfikatora 3 klas
 %Tablica na wyniki klasyfikacji
 outputs2 = zeros(test_size,3);
 
+
+
 for j=1:efforts
     [net]=train_net(learn_set_selected,learn_labels,neurons);
     % Prezentacja wyników
     % Wizualizacja zbiorów
-    figure(j)
-    plot(learn_set(learn_class1_idx,2),learn_set(learn_class1_idx,4),'ro')
-    hold on
-    plot(learn_set(learn_class2_idx,2),learn_set(learn_class2_idx,4),'bo')
-    hold on
-    plot(learn_set(learn_class3_idx,2),learn_set(learn_class3_idx,4),'go')
-    hold on;
-    xlabel(sprintf('x%d',2))
-    ylabel(sprintf('x%d',4))
-    axis([-1 1 -1 1])
-    legend('Klasa 1','Klasa 2','Klasa 3')
-    
-    sprintf('Wartoœci dla próby nr: %d', j)
-    input_weights=net.IW{1,1}
-    input_biases=net.b{1}
-    % Rysowanie sieci
-    for i=1:size(input_weights,1)
-        plotpc(input_weights(i,:),input_biases(i));
-    end;
-    
+    %     figure(j)
+    %     plot(learn_set(learn_class1_idx,2),learn_set(learn_class1_idx,4),'ro')
+    %     hold on
+    %     plot(learn_set(learn_class2_idx,2),learn_set(learn_class2_idx,4),'bo')
+    %     hold on
+    %     plot(learn_set(learn_class3_idx,2),learn_set(learn_class3_idx,4),'go')
+    %     hold on;
+    %     xlabel(sprintf('x%d',2))
+    %     ylabel(sprintf('x%d',4))
+    %     axis([-1 1 -1 1])
+    %     legend('Klasa 1','Klasa 2','Klasa 3')
+    %     title(sprintf('Klasyfikator 3 klas z %d neuronami w warstwie ukrytej', neurons))
     outputs2 = sim(net,test_set_selected');
     
     tab = outputs2';
@@ -179,33 +177,64 @@ for j=1:efforts
     
     %Obliczanie wskaŸnikó jakoœci klasyfikacji dla ka¿dej z klas
     for i=1:3
-        
-        fprintf('Klasa %d\n\n',i);
-        
-        TP = sum((results(:,1)==1)&(results(:,2)==1));
-        TN = sum((results(:,1)~=1)&(results(:,2)~=1));
-        FP = sum((results(:,1)==1)&(results(:,2)~=1));
-        FN = sum((results(:,1)~=1)&(results(:,2)==1));
-        
-        fprintf('TP %d\nTN %d\nFP %d\nFN %d\n\n',TP,TN,FP,FN);
-        
+             
+        TP = sum((results(:,1)==i)&(results(:,2)==i));
+        TN = sum((results(:,1)~=i)&(results(:,2)~=i));
+        FP = sum((results(:,1)==i)&(results(:,2)~=i));
+        FN = sum((results(:,1)~=i)&(results(:,2)==i));
+             
         tp_rate=TP/(FN+TP)*100;
         fp_rate=FP/(TN+FP)*100;
         precisi=TP/(TP+FP)*100;
         specify=TN/(FP+TN)*100;
         accurac=(TP+TN)/(TP+TN+FP+FN)*100;
         
-        fprintf('TP RATE %3.2f\nFP RATE %3.2f\nPRECISION %3.2f\nSPECIFITY %3.2f\nACCURACY %3.2f\n\n',tp_rate,fp_rate,precisi,specify,accurac);
-        
+        %Dodawanie wyników do tablicy z podsumowaniem
         summary(1,3*(j-1)+i) = tp_rate;
         summary(2,3*(j-1)+i) = fp_rate;
         summary(3,3*(j-1)+i) = precisi;
         summary(4,3*(j-1)+i) = specify;
         summary(5,3*(j-1)+i) = accurac;
         
-    end
-    
-end;
+        if i == 3
+            test(:,:) = summary(:,j+i-3:j+i-1);
+            %Chcemy, ¿eby dok³adnooœæ by³a jak najwy¿sza
+            if sum(test(1,1:3))/3>=treshold
+                
+                
+                
+%                 fprintf('Klasa %d\n\n',i);
+%                 fprintf('TP %d\nTN %d\nFP %d\nFN %d\n\n',TP,TN,FP,FN);
+%                 fprintf('TP RATE %3.2f\nFP RATE %3.2f\nPRECISION %3.2f\nSPECIFITY %3.2f\nACCURACY %3.2f\n\n',tp_rate,fp_rate,precisi,specify,accurac);
 
-summary'
+                figure(j)
+                plot(learn_set(learn_class1_idx,2),learn_set(learn_class1_idx,4),'ro')
+                hold on
+                plot(learn_set(learn_class2_idx,2),learn_set(learn_class2_idx,4),'bo')
+                hold on
+                plot(learn_set(learn_class3_idx,2),learn_set(learn_class3_idx,4),'go')
+                hold on;
+                xlabel(sprintf('x%d',2))
+                ylabel(sprintf('x%d',4))
+                axis([-1 1 -1 1])
+                legend('Klasa 1','Klasa 2','Klasa 3')
+                title(sprintf('Klasyfikator 3 klas z %d neuronami w warstwie ukrytej', neurons))
+                
+                sprintf('Wartoœci dla próby nr: %d (%d neurony w warstwie ukrytej)', j, neurons)
+                input_weights=net.IW{1,1}
+                input_biases=net.b{1}
+                
+                test(:,:)
+                
+                % Rysowanie sieci
+                for k=1:size(input_weights,1)
+                    plotpc(input_weights(k,:),input_biases(k));
+                end               
+            end
+        end        
+    end
+end
+
+% summary';
+fprintf('Koniec symulacji\n');
 
